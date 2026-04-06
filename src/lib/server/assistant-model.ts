@@ -17,7 +17,7 @@ const weekdayIndex: Record<string, number> = {
 
 const assistantJsonSchema = {
   name: "cosmic_assistant_plan",
-  strict: true,
+  strict: false,
   schema: {
     type: "object",
     additionalProperties: false,
