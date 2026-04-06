@@ -21,9 +21,13 @@ import {
   getTimelineOffset,
 } from "@/lib/date";
 
+export function normalizeRRuleString(rule: string) {
+  return rule.replace(/^RRULE:/i, "").trim();
+}
+
 function buildRule(event: EventRecord, rule: EventRecurrenceRule) {
   return rrulestr(
-    `DTSTART:${format(parseISO(event.start_at), "yyyyMMdd'T'HHmmss'Z'")}\nRRULE:${rule.rrule}`,
+    `DTSTART:${format(parseISO(event.start_at), "yyyyMMdd'T'HHmmss'Z'")}\nRRULE:${normalizeRRuleString(rule.rrule)}`,
   );
 }
 
@@ -50,7 +54,7 @@ export function buildRecurrenceString(input: {
     options.until = parseISO(input.until);
   }
 
-  return RRule.optionsToString(options as Options);
+  return normalizeRRuleString(RRule.optionsToString(options as Options));
 }
 
 export function expandEventOccurrences(params: {
