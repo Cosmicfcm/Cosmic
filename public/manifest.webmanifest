@@ -1,0 +1,10 @@
+{
+  "name": "Cosmic",
+  "short_name": "Cosmic",
+  "description": "A calm AI calendar and productivity system for focused days.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#071017",
+  "theme_color": "#071017",
+  "icons": []
+}

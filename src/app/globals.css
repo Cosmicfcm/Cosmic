@@ -1,0 +1,137 @@
+@import "tailwindcss";
+
+:root {
+  --background: #071017;
+  --background-elevated: #0d1720;
+  --background-panel: #12222e;
+  --foreground: #effaf6;
+  --muted: #9ab4b6;
+  --border: rgba(180, 225, 212, 0.12);
+  --accent: #78f3c6;
+  --accent-strong: #2ec4a2;
+  --accent-soft: rgba(120, 243, 198, 0.18);
+  --danger: #ff8e8e;
+  --warning: #ffd08a;
+  --shadow: 0 24px 80px rgba(0, 0, 0, 0.28);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-manrope);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-manrope), sans-serif;
+}
+
+body {
+  background-image:
+    radial-gradient(circle at top left, rgba(120, 243, 198, 0.12), transparent 34%),
+    radial-gradient(circle at top right, rgba(46, 196, 162, 0.12), transparent 28%),
+    linear-gradient(180deg, #0a1218 0%, #071017 48%, #050b10 100%);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+::selection {
+  background: rgba(120, 243, 198, 0.24);
+  color: white;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(140, 196, 183, 0.24);
+  border-radius: 999px;
+}
+
+.glass-panel {
+  background: linear-gradient(
+    180deg,
+    rgba(18, 34, 46, 0.88) 0%,
+    rgba(10, 20, 29, 0.9) 100%
+  );
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(18px);
+}
+
+.timeline-grid {
+  background-image: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.04) 1px,
+    transparent 1px
+  );
+  background-size: 100% 64px;
+}
+
+.bg-mesh {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.8), transparent 88%);
+}
+
+.text-balance {
+  text-wrap: balance;
+}
+
+.animate-fade-up {
+  animation: fade-up 320ms ease-out;
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.sr-only-focusable:focus {
+  position: fixed;
+  left: 1rem;
+  top: 1rem;
+  z-index: 999;
+  width: auto;
+  height: auto;
+  clip: auto;
+  padding: 0.75rem 1rem;
+  border-radius: 999px;
+  background: #08131b;
+  border: 1px solid rgba(120, 243, 198, 0.4);
+}
+
+.prose-muted {
+  color: var(--muted);
+}
