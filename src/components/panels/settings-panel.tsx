@@ -16,7 +16,6 @@ export function SettingsPanel() {
   const syncMessage = useCosmicStore((state) => state.syncMessage);
   const reminderPermission = useCosmicStore((state) => state.reminderPermission);
   const signOut = useCosmicStore((state) => state.signOut);
-  const exportWorkspace = useCosmicStore(snapshotFromState);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   return (
@@ -63,13 +62,16 @@ export function SettingsPanel() {
           <Button
             className="mt-4"
             variant="secondary"
-            onClick={() =>
+            onClick={() => {
+              const exportWorkspace = snapshotFromState(useCosmicStore.getState());
+              return (
               downloadFile(
                 `cosmic-export-${new Date().toISOString().slice(0, 10)}.json`,
                 JSON.stringify(serializeWorkspace(exportWorkspace), null, 2),
                 "application/json",
               )
-            }
+              );
+            }}
           >
             <CloudDownload className="mr-2 h-4 w-4" />
             Export JSON

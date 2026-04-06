@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { addMinutes, parseISO, setHours, setMinutes, startOfToday } from "date-fns";
 import type { AuthChangeEvent, Session } from "@supabase/supabase-js";
 import { create } from "zustand";
@@ -408,13 +409,20 @@ export function snapshotFromState(state: CosmicState): WorkspaceSnapshot {
 }
 
 export function useDayOccurrences() {
-  return useCosmicStore((state) =>
+  const selectedDate = useCosmicStore((state) => state.selectedDate);
+  const events = useCosmicStore((state) => state.events);
+  const rules = useCosmicStore((state) => state.eventRecurrenceRules);
+  const overrides = useCosmicStore((state) => state.eventOverrides);
+
+  return useMemo(
+    () =>
     expandEventOccurrences({
-      events: state.events,
-      rules: state.eventRecurrenceRules,
-      overrides: state.eventOverrides,
-      rangeStart: new Date(`${state.selectedDate}T00:00:00`),
-      rangeEnd: new Date(`${state.selectedDate}T23:59:59`),
-    }),
+        events,
+        rules,
+        overrides,
+        rangeStart: new Date(`${selectedDate}T00:00:00`),
+        rangeEnd: new Date(`${selectedDate}T23:59:59`),
+      }),
+    [events, overrides, rules, selectedDate],
   );
 }

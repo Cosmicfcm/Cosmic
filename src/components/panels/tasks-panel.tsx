@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { CalendarClock, Pencil, Plus, Trash2 } from "lucide-react";
 
 import { deleteTask, toggleTask } from "@/lib/client/workspace-actions";
@@ -8,13 +9,18 @@ import { useCosmicStore } from "@/store/cosmic-store";
 import { Button, SectionCard } from "@/components/shared/ui";
 
 export function TasksPanel() {
-  const tasks = useCosmicStore((state) => [...state.tasks].sort((left, right) => {
-    if (left.completed !== right.completed) {
-      return left.completed ? 1 : -1;
-    }
-    return (left.due_at ?? "").localeCompare(right.due_at ?? "");
-  }));
+  const tasks = useCosmicStore((state) => state.tasks);
   const openTaskEditor = useCosmicStore((state) => state.openTaskEditor);
+  const sortedTasks = useMemo(
+    () =>
+      [...tasks].sort((left, right) => {
+        if (left.completed !== right.completed) {
+          return left.completed ? 1 : -1;
+        }
+        return (left.due_at ?? "").localeCompare(right.due_at ?? "");
+      }),
+    [tasks],
+  );
 
   return (
     <SectionCard
@@ -28,13 +34,13 @@ export function TasksPanel() {
       }
     >
       <div className="space-y-3">
-        {tasks.length === 0 ? (
+        {sortedTasks.length === 0 ? (
           <p className="rounded-2xl border border-dashed border-white/10 p-6 text-sm text-[var(--muted)]">
             No tasks yet. Add one and link it to an event if it belongs on the calendar.
           </p>
         ) : null}
 
-        {tasks.map((task) => (
+        {sortedTasks.map((task) => (
           <div
             key={task.id}
             className="rounded-3xl border border-white/8 bg-white/[0.03] p-4"
