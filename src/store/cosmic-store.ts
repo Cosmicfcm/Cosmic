@@ -4,6 +4,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 import { getUserTimezone, toIsoDate, toIsoDateTimeInput } from "@/lib/date";
+import { hasSupabaseBrowserEnv } from "@/lib/env";
 import { expandEventOccurrences } from "@/lib/recurrence";
 import { getBrowserSupabaseClient } from "@/lib/supabase/client";
 import { getAuthRedirectUrl, loadWorkspace } from "@/lib/workspace";
@@ -186,7 +187,13 @@ export const useCosmicStore = create<CosmicState>()(
       noteEditor: { open: false, draft: createDefaultNoteDraft() },
       goalEditor: { open: false, draft: createDefaultGoalDraft() },
       bootstrap: async () => {
-        const client = getBrowserSupabaseClient();
+        let client = null;
+
+        try {
+          client = getBrowserSupabaseClient();
+        } catch {
+          client = null;
+        }
 
         if (!client) {
           const { workspace, profile, mode } = await loadWorkspace(null, null);
@@ -195,39 +202,55 @@ export const useCosmicStore = create<CosmicState>()(
             user: profile,
             mode,
             bootstrapComplete: true,
+            error: hasSupabaseBrowserEnv
+              ? "Supabase configuration looks invalid. Check your Netlify environment variables."
+              : null,
             syncMessage: "Running in demo mode.",
           });
           return;
         }
 
-        const {
-          data: { session },
-        } = await client.auth.getSession();
+        try {
+          const {
+            data: { session },
+          } = await client.auth.getSession();
 
-        set({ session });
-        client.auth.onAuthStateChange(
-          (_event: AuthChangeEvent, nextSession: Session | null) => {
-          set({ session: nextSession });
-          },
-        );
+          set({ session });
+          client.auth.onAuthStateChange(
+            (_event: AuthChangeEvent, nextSession: Session | null) => {
+              set({ session: nextSession });
+            },
+          );
 
-        if (!session) {
+          if (!session) {
+            set({
+              mode: "signed-out",
+              bootstrapComplete: true,
+              syncMessage: "Sign in to sync, or explore the demo.",
+            });
+            return;
+          }
+
+          const { workspace, profile, mode } = await loadWorkspace(client, session);
           set({
-            mode: "signed-out",
+            ...workspace,
+            user: profile,
+            mode,
             bootstrapComplete: true,
-            syncMessage: "Sign in to sync, or explore the demo.",
+            syncMessage: "Synced with Supabase.",
           });
-          return;
+        } catch {
+          const { workspace, profile, mode } = await loadWorkspace(null, null);
+          set({
+            ...workspace,
+            user: profile,
+            mode,
+            bootstrapComplete: true,
+            error:
+              "Supabase could not be reached. Check your Netlify environment variables.",
+            syncMessage: "Running in demo mode.",
+          });
         }
-
-        const { workspace, profile, mode } = await loadWorkspace(client, session);
-        set({
-          ...workspace,
-          user: profile,
-          mode,
-          bootstrapComplete: true,
-          syncMessage: "Synced with Supabase.",
-        });
       },
       enterDemoMode: async () => {
         const { workspace, profile, mode } = await loadWorkspace(null, null);
@@ -248,9 +271,20 @@ export const useCosmicStore = create<CosmicState>()(
         });
       },
       requestMagicLink: async (email) => {
-        const client = getBrowserSupabaseClient();
+        let client = null;
+
+        try {
+          client = getBrowserSupabaseClient();
+        } catch {
+          client = null;
+        }
+
         if (!client) {
-          set({ error: "Supabase environment variables are missing." });
+          set({
+            error: hasSupabaseBrowserEnv
+              ? "Supabase configuration looks invalid."
+              : "Supabase environment variables are missing.",
+          });
           return;
         }
 
@@ -293,7 +327,14 @@ export const useCosmicStore = create<CosmicState>()(
         set({ reminderPermission: permission });
       },
       savePushSubscription: async (subscription) => {
-        const client = getBrowserSupabaseClient();
+        let client = null;
+
+        try {
+          client = getBrowserSupabaseClient();
+        } catch {
+          client = null;
+        }
+
         const state = useCosmicStore.getState();
         if (!client || state.mode !== "authenticated") {
           set({ error: "Push notifications need a signed-in session." });
