@@ -267,6 +267,14 @@ function heuristicAssistantReply(params: {
   };
 }
 
+function openAiFailureReply(message: string): AssistantReply {
+  return {
+    reply: `OpenAI request failed: ${message}`,
+    actions: [],
+    warnings: ["The assistant could not reach OpenAI successfully."],
+  };
+}
+
 export async function generateAssistantReply(params: {
   message: string;
   selectedDate: string;
@@ -287,51 +295,72 @@ export async function generateAssistantReply(params: {
     `Assume current selected date is ${params.selectedDate} in timezone ${params.timezone}.`,
   ].join(" ");
 
-  const openAiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${env.openAiApiKey}`,
-    },
-    body: JSON.stringify({
-      model: env.openAiModel,
-      temperature: 0.2,
-      response_format: {
-        type: "json_schema",
-        json_schema: assistantJsonSchema,
+  try {
+    const openAiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${env.openAiApiKey}`,
       },
-      messages: [
-        {
-          role: "system",
-          content: systemPrompt,
+      body: JSON.stringify({
+        model: env.openAiModel,
+        temperature: 0.2,
+        response_format: {
+          type: "json_schema",
+          json_schema: assistantJsonSchema,
         },
-        {
-          role: "user",
-          content: JSON.stringify({
-            message: params.message,
-            workspace: summarizeWorkspace(params.workspace),
-          }),
-        },
-      ],
-    }),
-  });
+        messages: [
+          {
+            role: "system",
+            content: systemPrompt,
+          },
+          {
+            role: "user",
+            content: JSON.stringify({
+              message: params.message,
+              workspace: summarizeWorkspace(params.workspace),
+            }),
+          },
+        ],
+      }),
+    });
 
-  if (!openAiResponse.ok) {
-    return heuristicAssistantReply(params);
+    if (!openAiResponse.ok) {
+      const errorPayload = (await openAiResponse.json().catch(() => null)) as
+        | {
+            error?: {
+              message?: string;
+              type?: string;
+              code?: string;
+            };
+          }
+        | null;
+
+      const errorMessage =
+        errorPayload?.error?.message ??
+        errorPayload?.error?.code ??
+        `${openAiResponse.status} ${openAiResponse.statusText}`;
+
+      return openAiFailureReply(errorMessage);
+    }
+
+    const payload = (await openAiResponse.json()) as {
+      choices?: Array<{
+        message?: {
+          content?: string;
+        };
+      }>;
+    };
+
+    const content = payload.choices?.[0]?.message?.content;
+    if (!content) {
+      return openAiFailureReply("OpenAI returned an empty response.");
+    }
+
+    return assistantReplySchema.parse(JSON.parse(content));
+  } catch (error) {
+    return openAiFailureReply(
+      error instanceof Error ? error.message : "Unknown OpenAI error.",
+    );
   }
-
-  const payload = (await openAiResponse.json()) as {
-    choices?: Array<{
-      message?: {
-        content?: string;
-      };
-    }>;
-  };
-
-  const content = payload.choices?.[0]?.message?.content;
-  if (!content) {
-    return heuristicAssistantReply(params);
-  }
-
-  return assistantReplySchema.parse(JSON.parse(content));
 }
